@@ -8,6 +8,8 @@ for extracurricular activities at Mergington High School.
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
+from datetime import datetime, timezone
 import os
 from pathlib import Path
 
@@ -78,6 +80,15 @@ activities = {
 }
 
 
+# In-memory activity records database
+activity_records: dict[str, list[dict]] = {}
+
+
+class ActivityRecord(BaseModel):
+    email: str
+    content: str
+
+
 @app.get("/")
 def root():
     return RedirectResponse(url="/static/index.html")
@@ -130,3 +141,33 @@ def unregister_from_activity(activity_name: str, email: str):
     # Remove student
     activity["participants"].remove(email)
     return {"message": f"Unregistered {email} from {activity_name}"}
+
+
+@app.get("/activities/{activity_name}/records")
+def get_activity_records(activity_name: str):
+    """Get all records for an activity"""
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    return activity_records.get(activity_name, [])
+
+
+@app.post("/activities/{activity_name}/records")
+def add_activity_record(activity_name: str, record: ActivityRecord):
+    """Add a record for an activity"""
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    activity = activities[activity_name]
+    if record.email not in activity["participants"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Only registered participants can add records"
+        )
+
+    new_record = {
+        "email": record.email,
+        "content": record.content,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    activity_records.setdefault(activity_name, []).append(new_record)
+    return {"message": "Record added successfully", "record": new_record}

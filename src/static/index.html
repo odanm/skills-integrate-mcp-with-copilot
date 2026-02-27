@@ -39,6 +39,32 @@
         </form>
         <div id="message" class="hidden"></div>
       </section>
+
+      <section id="records-container">
+        <h3>Activity Records</h3>
+        <form id="record-form">
+          <div class="form-group">
+            <label for="record-email">Student Email:</label>
+            <input type="email" id="record-email" required placeholder="your-email@mergington.edu" />
+          </div>
+          <div class="form-group">
+            <label for="record-activity">Activity:</label>
+            <select id="record-activity" required>
+              <option value="">-- Select an activity --</option>
+              <!-- Activity options will be loaded here -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="record-content">Activity Record:</label>
+            <textarea id="record-content" required placeholder="Describe what happened in today's activity..." rows="4"></textarea>
+          </div>
+          <button type="submit">Save Record</button>
+        </form>
+        <div id="record-message" class="hidden"></div>
+        <div id="records-list">
+          <!-- Records will be loaded here -->
+        </div>
+      </section>
     </main>
 
     <footer>

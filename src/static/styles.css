@@ -141,12 +141,48 @@ section h3 {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
   width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 16px;
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.record-card {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.record-meta {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.record-meta span {
+  color: #888;
+}
+
+.record-content {
+  color: #333;
+  white-space: pre-wrap;
+}
+
+#records-list h4 {
+  margin-top: 20px;
+  margin-bottom: 8px;
+  color: #1a237e;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 6px;
 }
 
 button {

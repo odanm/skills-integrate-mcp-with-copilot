@@ -1,8 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
   const activitiesList = document.getElementById("activities-list");
   const activitySelect = document.getElementById("activity");
+  const recordActivitySelect = document.getElementById("record-activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const recordForm = document.getElementById("record-form");
+  const recordMessageDiv = document.getElementById("record-message");
+  const recordsList = document.getElementById("records-list");
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -49,11 +53,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         activitiesList.appendChild(activityCard);
 
-        // Add option to select dropdown
+        // Add option to select dropdowns
         const option = document.createElement("option");
         option.value = name;
         option.textContent = name;
         activitySelect.appendChild(option);
+
+        const recordOption = document.createElement("option");
+        recordOption.value = name;
+        recordOption.textContent = name;
+        recordActivitySelect.appendChild(recordOption);
       });
 
       // Add event listeners to delete buttons
@@ -152,6 +161,104 @@ document.addEventListener("DOMContentLoaded", () => {
       messageDiv.className = "error";
       messageDiv.classList.remove("hidden");
       console.error("Error signing up:", error);
+    }
+  });
+
+  // Fetch and display records for a selected activity
+  async function fetchRecords(activityName) {
+    try {
+      const response = await fetch(
+        `/activities/${encodeURIComponent(activityName)}/records`
+      );
+      const records = await response.json();
+
+      recordsList.innerHTML = "";
+      if (records.length === 0) {
+        recordsList.innerHTML = "<p><em>No records yet for this activity.</em></p>";
+        return;
+      }
+
+      const heading = document.createElement("h4");
+      heading.textContent = `Records for ${activityName}`;
+      recordsList.appendChild(heading);
+
+      records.forEach((record) => {
+        const card = document.createElement("div");
+        card.className = "record-card";
+
+        const meta = document.createElement("p");
+        meta.className = "record-meta";
+        const strong = document.createElement("strong");
+        strong.textContent = record.email;
+        const span = document.createElement("span");
+        span.textContent = new Date(record.timestamp).toLocaleString();
+        meta.appendChild(strong);
+        meta.appendChild(document.createTextNode(" \u2014 "));
+        meta.appendChild(span);
+
+        const content = document.createElement("p");
+        content.className = "record-content";
+        content.textContent = record.content;
+
+        card.appendChild(meta);
+        card.appendChild(content);
+        recordsList.appendChild(card);
+      });
+    } catch (error) {
+      recordsList.innerHTML = "<p>Failed to load records.</p>";
+      console.error("Error fetching records:", error);
+    }
+  }
+
+  // Update records display when activity selection changes
+  recordActivitySelect.addEventListener("change", () => {
+    const selected = recordActivitySelect.value;
+    if (selected) {
+      fetchRecords(selected);
+    } else {
+      recordsList.innerHTML = "";
+    }
+  });
+
+  // Handle record form submission
+  recordForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const email = document.getElementById("record-email").value;
+    const activity = recordActivitySelect.value;
+    const content = document.getElementById("record-content").value;
+
+    try {
+      const response = await fetch(
+        `/activities/${encodeURIComponent(activity)}/records`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, content }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        recordMessageDiv.textContent = result.message;
+        recordMessageDiv.className = "success";
+        document.getElementById("record-content").value = "";
+        fetchRecords(activity);
+      } else {
+        recordMessageDiv.textContent = result.detail || "An error occurred";
+        recordMessageDiv.className = "error";
+      }
+
+      recordMessageDiv.classList.remove("hidden");
+      setTimeout(() => {
+        recordMessageDiv.classList.add("hidden");
+      }, 5000);
+    } catch (error) {
+      recordMessageDiv.textContent = "Failed to save record. Please try again.";
+      recordMessageDiv.className = "error";
+      recordMessageDiv.classList.remove("hidden");
+      console.error("Error saving record:", error);
     }
   });
 

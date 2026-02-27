@@ -8,8 +8,10 @@ for extracurricular activities at Mergington High School.
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 import os
 from pathlib import Path
+from datetime import datetime, timezone
 
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
@@ -78,6 +80,15 @@ activities = {
 }
 
 
+class ExperiencePost(BaseModel):
+    author: str
+    content: str
+
+
+# In-memory experience store per activity (keyed by same names as activities)
+experiences: dict[str, list] = {name: [] for name in activities}
+
+
 @app.get("/")
 def root():
     return RedirectResponse(url="/static/index.html")
@@ -130,3 +141,32 @@ def unregister_from_activity(activity_name: str, email: str):
     # Remove student
     activity["participants"].remove(email)
     return {"message": f"Unregistered {email} from {activity_name}"}
+
+
+@app.get("/activities/{activity_name}/experiences")
+def get_experiences(activity_name: str):
+    """Get all experiences posted for an activity"""
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    return experiences.get(activity_name, [])
+
+
+@app.post("/activities/{activity_name}/experiences")
+def post_experience(activity_name: str, experience: ExperiencePost):
+    """Post an experience or interview for an activity"""
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    if not experience.author.strip():
+        raise HTTPException(status_code=400, detail="Author is required")
+
+    if not experience.content.strip():
+        raise HTTPException(status_code=400, detail="Content is required")
+
+    entry = {
+        "author": experience.author.strip(),
+        "content": experience.content.strip(),
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    experiences[activity_name].append(entry)
+    return {"message": "Experience posted successfully", "experience": entry}
